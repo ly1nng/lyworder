@@ -86,7 +86,15 @@ cp configs/config.yaml.tmpl configs/config.yaml
 vim configs/config.yaml
 ```
 
-### 4. 安装依赖 & 启动
+### 4. 关于oauth2
+RedirectURI 配置为 http://localhost:8080/oauth/callback
+ClientID 配置为 与你的oauth供应商保持一致
+ClientSecret 配置为 与你的oauth供应商保持一致
+跳转链接 配置为 http://localhost:8080/login
+映射的用户名字段为user_name
+映射的用户ID为user_id
+
+### 5. 安装依赖 & 启动
 ```bash
 # 安装Go依赖
 go mod tidy
@@ -98,7 +106,7 @@ go run main.go
 make docker-run
 ```
 
-### 5. 访问系统
+### 6. 访问系统
 - **主页**: http://localhost:8080
 - **API文档**: http://localhost:8080/swagger/index.html
 - **管理员账号**: 首次使用时，系统会查询对应JWT的user_name字段，将需要配置为管理员角色的user_name添加到数据库中数据库语句如下：
