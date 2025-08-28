@@ -1,0 +1,35 @@
+Server:
+  Host: http://localhost:8080
+  Domain: localhost
+  RunMode: debug
+  HttpPort: 8080
+  ReadTimeout: 60
+  WriteTimeout: 60
+Oauth:
+  ClientId: "xxxx"
+  ClientSecret: "xxxxx"
+  RedirectURI: "http://localhost:8080/oauth/callback"
+  AuthURL:     "https://your-oauth2-server/auth/oauth/authorize"
+  TokenURL:    "https://your-oauth2-server/auth/oauth/token"
+  UserInfoURL:  "https://your-oauth2-server/auth/oauth/getUserInfo"
+  LogoutURL:    "https://your-oauth2-server/auth/oauth/logout"
+Database:
+  DBType: mysql
+  Username: root
+  Password: root
+  Host: 127.0.0.1:3306
+  DBName: ticket_system
+  Charset: utf8mb4
+  MaxIdleConns: 10
+  MaxOpenConns: 30
+  ConnMaxLifetime: 30
+Dify:
+  APIURL: "https://your-dify-server/v1"
+  APIKey: "app-xxxx"
+Thumb:
+  MaxWidth: 200
+  MaxHeight: 150
+  Quality: 75
+Meet:
+  Host: "https://your-IM-server/im/message/send/"
+  RoBotKey: "xxxxxx"

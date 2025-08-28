@@ -1,0 +1,9 @@
+static/uploads/*
+configs/config.yaml
+lyworder
+static.zip
+.DS_Store
+**/.DS_Store
+.DS_Store?
+__debug_bin*
+bin/*

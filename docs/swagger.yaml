@@ -1,0 +1,921 @@
+basePath: /
+definitions:
+  model.RemarkUpdate:
+    properties:
+      remark:
+        example: 这是一个备注
+        type: string
+    required:
+    - remark
+    type: object
+  model.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  model.SolutionUpdate:
+    properties:
+      solution:
+        example: 这是解决方案
+        type: string
+    required:
+    - solution
+    type: object
+  model.StatusUpdate:
+    properties:
+      status:
+        example: open
+        type: string
+    required:
+    - status
+    type: object
+  model.Ticket:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      operator_name:
+        type: string
+      remark:
+        type: string
+      screenshots:
+        items:
+          type: string
+        type: array
+      solution:
+        type: string
+      status:
+        type: string
+      ticket_type:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+      user_name:
+        type: string
+    type: object
+  model.TicketOperatorUpdate:
+    properties:
+      operator_name:
+        example: admin
+        type: string
+    required:
+    - operator_name
+    type: object
+  model.TicketTypeUpdate:
+    properties:
+      ticket_type:
+        example: IT
+        type: string
+    required:
+    - ticket_type
+    type: object
+  model.User:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      ops_type:
+        type: string
+      role:
+        type: string
+      status:
+        type: integer
+      updated_at:
+        type: string
+      user_name:
+        type: string
+    type: object
+  model.UserCreate:
+    properties:
+      ops_type:
+        example: system
+        type: string
+      role:
+        example: operator
+        type: string
+      status:
+        example: 1
+        type: integer
+      user_name:
+        example: newuser
+        type: string
+    required:
+    - role
+    - status
+    - user_name
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: 这是一个完整的工单管理系统，用于跟踪和管理用户提交的工单
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: 工单管理系统 API
+  version: "1.0"
+paths:
+  /api/v1/operator/users:
+    delete:
+      description: 根据用户名删除用户，需要管理员权限
+      parameters:
+      - description: 用户名
+        in: query
+        name: user_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                message:
+                  type: string
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: 服务器错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: 删除用户
+      tags:
+      - 用户管理
+    get:
+      consumes:
+      - application/json
+      description: 从users表获取所有用户信息，需要管理员权限
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 用户列表
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: 服务器错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: 获取所有用户
+      tags:
+      - 用户管理
+    post:
+      consumes:
+      - application/json
+      description: 向users表添加新用户，需要管理员权限
+      parameters:
+      - description: 用户信息
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.UserCreate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                message:
+                  type: string
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: 服务器错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: 新增用户
+      tags:
+      - 用户管理
+  /api/v1/operator/users/status:
+    get:
+      description: 从users表获取指定状态的用户，需要管理员权限
+      parameters:
+      - description: 状态值(1:工作中, 0:非工作中)
+        in: query
+        name: status
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 用户列表
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.User'
+                  type: array
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: 服务器错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: 根据状态获取用户
+      tags:
+      - 用户管理
+    put:
+      description: 更新指定用户的工作状态，需要管理员权限
+      parameters:
+      - description: 用户名
+        in: query
+        name: user_name
+        required: true
+        type: string
+      - description: 状态值(1:工作中, 0:非工作中)
+        in: query
+        name: status
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                message:
+                  type: string
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: 服务器错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: 更新用户状态
+      tags:
+      - 用户管理
+  /api/v1/operator/users/type:
+    put:
+      description: 更新指定用户的运维类型，需要管理员权限
+      parameters:
+      - description: 用户名
+        in: query
+        name: user_name
+        required: true
+        type: string
+      - description: 运维类型(system/it)
+        in: query
+        name: ops_type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                message:
+                  type: string
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: 服务器错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: 更新用户运维类型
+      tags:
+      - 用户管理
+  /api/v1/operator/usersname:
+    get:
+      description: 获取所有操作员用户的用户名列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 用户名列表
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                data:
+                  items:
+                    type: string
+                  type: array
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: 服务器错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: 获取操作员用户名列表
+      tags:
+      - 用户管理
+  /api/v1/tickets:
+    get:
+      consumes:
+      - application/json
+      description: 根据条件查询工单列表，支持分页和筛选
+      parameters:
+      - description: 工单标题模糊搜索
+        in: query
+        name: title
+        type: string
+      - description: 工单状态(open/closed)
+        in: query
+        name: status
+        type: string
+      - description: 开始日期(YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: 结束日期(YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      - description: 创建人用户名
+        in: query
+        name: user_name
+        type: string
+      - description: 处理人用户名
+        in: query
+        name: operator_name
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 工单列表
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "403":
+          description: 无权限
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: 服务器错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: 获取工单列表
+      tags:
+      - 工单管理
+    post:
+      consumes:
+      - multipart/form-data
+      description: 创建新的工单，支持截图上传
+      parameters:
+      - description: 工单标题
+        in: formData
+        name: title
+        required: true
+        type: string
+      - description: 工单内容
+        in: formData
+        name: content
+        required: true
+        type: string
+      - description: 工单类型
+        in: formData
+        name: ticket_type
+        type: string
+      - collectionFormat: csv
+        description: 截图文件
+        in: formData
+        items:
+          type: file
+        name: screenshots
+        type: array
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 创建成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: 服务器错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: 创建新工单
+      tags:
+      - 工单管理
+  /api/v1/tickets/{id}/detail:
+    get:
+      consumes:
+      - application/json
+      description: 根据工单ID获取详细信息，包含权限验证
+      parameters:
+      - description: 工单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 工单详情
+          schema:
+            $ref: '#/definitions/model.Ticket'
+        "401":
+          description: 未授权
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "403":
+          description: 无权限
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "404":
+          description: 工单不存在
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: 服务器错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: 获取工单详情
+      tags:
+      - 工单管理
+  /api/v1/tickets/{id}/operators:
+    put:
+      consumes:
+      - application/json
+      description: 更新指定工单的处理人姓名
+      parameters:
+      - description: 工单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 处理人更新信息
+        in: body
+        name: operator
+        required: true
+        schema:
+          $ref: '#/definitions/model.TicketOperatorUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: 更新工单处理人
+      tags:
+      - 工单管理
+  /api/v1/tickets/{id}/remark:
+    put:
+      consumes:
+      - application/json
+      description: 更新指定工单的备注信息
+      parameters:
+      - description: 工单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 备注更新信息
+        in: body
+        name: remark
+        required: true
+        schema:
+          $ref: '#/definitions/model.RemarkUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                message:
+                  type: string
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: 服务器错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: 更新工单备注
+      tags:
+      - 工单管理
+  /api/v1/tickets/{id}/solution:
+    put:
+      consumes:
+      - application/json
+      description: 更新指定工单的解决方案
+      parameters:
+      - description: 工单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 解决方案更新信息
+        in: body
+        name: solution
+        required: true
+        schema:
+          $ref: '#/definitions/model.SolutionUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                message:
+                  type: string
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: 服务器错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: 更新工单解决方案
+      tags:
+      - 工单管理
+  /api/v1/tickets/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: 更新指定工单的状态
+      parameters:
+      - description: 工单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 状态更新信息
+        in: body
+        name: status
+        required: true
+        schema:
+          $ref: '#/definitions/model.StatusUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                message:
+                  type: string
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: 服务器错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: 更新工单状态
+      tags:
+      - 工单管理
+  /api/v1/tickets/{id}/type:
+    put:
+      consumes:
+      - application/json
+      description: 更新指定工单的类型
+      parameters:
+      - description: 工单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 工单类型更新信息
+        in: body
+        name: type
+        required: true
+        schema:
+          $ref: '#/definitions/model.TicketTypeUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: 更新工单类型
+      tags:
+      - 工单管理
+schemes:
+- http
+- https
+swagger: "2.0"

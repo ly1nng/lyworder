@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <base href="/">
+    <link rel="icon" type="image/png" sizes="16x16" href="/ticket.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理</title>
+    <link rel="stylesheet" href="./vendor/css/bootstrap.min.css">
+    <link rel="stylesheet" href="./vendor/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --light-blue: #e6f0ff;
+            --dark-blue: #2a4bd7;
+            --success-color: #38b000;
+            --warning-color: #ff9f1c;
+            --danger-color: #e63946;
+            --neutral-color: #f8f9fa;
+            --border-radius: 0.75rem;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fc;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .user-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            z-index: 100;
+        }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-active {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .status-inactive {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .action-btn {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="user-info" id="user-info"></div>
+    <div class="container mt-5">
+        <h1 class="text-center mb-5">用户管理</h1>
+
+        <div class="card mb-5">
+            <div class="card-header">
+                <h3>筛选用户</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="statusFilter">状态筛选</label>
+                            <select id="statusFilter" class="form-control">
+                                <option value="all">全部</option>
+                                <option value="1">工作中</option>
+                                <option value="0">非工作中</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mt-4">
+                        <button id="filterBtn" class="btn btn-primary">筛选</button>
+                        <button id="resetBtn" class="btn btn-secondary ml-2">重置</button>
+                    </div>
+                    <div class="col-md-4 mt-4">
+                        <button id="addUserBtn" class="btn btn-success">
+                            <i class="fas fa-plus"></i> 新增用户
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>用户列表</h3>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered table-hover">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>用户名</th>
+                            <th>角色</th>
+                            <th>运维类型</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <!-- 用户数据将通过JavaScript动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 状态更新模态框 -->
+    <div class="modal fade" id="updateStatusModal" tabindex="-1" role="dialog" aria-labelledby="updateStatusModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="updateStatusModalLabel">更新用户状态</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>确定要更新用户 <span id="modalUserName"></span> 的状态吗？</p>
+                    <div class="form-group">
+                        <label for="modalStatus">状态</label>
+                        <select id="modalStatus" class="form-control">
+                            <option value="1">工作中</option>
+                            <option value="0">非工作中</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="modalOpsType">运维类型</label>
+                        <select id="modalOpsType" class="form-control">
+                            <option value="it">IT运维</option>
+                            <option value="system">系统运维</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="confirmUpdateBtn">确认更新</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增用户模态框 -->
+    <div class="modal fade" id="addUserModal" tabindex="-1" role="dialog" aria-labelledby="addUserModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addUserModalLabel">新增用户</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="newUserName">用户名</label>
+                        <input type="text" class="form-control" id="newUserName" placeholder="请输入用户名">
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserRole">角色</label>
+                        <select id="newUserRole" class="form-control">
+                            <option value="operator">操作员</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserStatus">状态</label>
+                        <select id="newUserStatus" class="form-control">
+                            <option value="1">工作中</option>
+                            <option value="0">非工作中</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserOpsType">运维类型</label>
+                        <select id="newUserOpsType" class="form-control">
+                            <option value="system">系统运维</option>
+                            <option value="it">IT运维</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="confirmAddBtn">确认添加</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 在现有模态框后面添加删除确认模态框 -->
+    <!-- 放在新增用户模态框后面 -->
+
+    <!-- 删除确认模态框 -->
+    <div class="modal fade" id="deleteUserModal" tabindex="-1" role="dialog" aria-labelledby="deleteUserModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteUserModalLabel">确认删除用户</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>确定要删除用户 <span id="deleteModalUserName" class="font-weight-bold"></span> 吗？</p>
+                    <p class="text-danger">此操作不可撤销，将永久删除该用户的所有数据。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">确认删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="./vendor/js/jquery.min.js"></script>
+    <script src="./vendor/js/bootstrap.min.js"></script>
+    <script>
+        // 检查登录状态
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/api/v1/users', {
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const user = await response.json();
+                    let adminLink = '';
+                    if (user.data.role === 'admin') {
+                        adminLink = ' | <a href="/operator">我的运维</a> | <a href="/admin">管理后台</a> ';
+                    } else if (user.data.role === 'operator') {
+                        adminLink = ' | <a href="/operator">我的运维</a>';
+                    }
+                    document.getElementById('user-info').innerHTML =
+                        `<span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">欢迎，${user.data.user_name} | <a href="/tickets">我的工单</a>${adminLink} | <a href="/">返回</a> |<a href="/logout">退出</a></span>`;
+                } else {
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('Error checking login status:', error);
+            }
+        }
+
+        // 页面加载时检查登录状态
+        window.onload = checkLoginStatus;
+        // 全局变量，用于存储API基础URL
+        const API_URL = '/api/v1/operator';
+
+        // 全局变量，用于存储当前选中的用户名
+        let currentUserName = null;
+
+        // 页面加载完成后执行
+        $(document).ready(function () {
+            // 加载所有用户
+            loadUsers();
+
+            // 筛选按钮点击事件
+            $('#filterBtn').click(function () {
+                const status = $('#statusFilter').val();
+                if (status === 'all') {
+                    loadUsers();
+                } else {
+                    loadUsersByStatus(status);
+                }
+            });
+
+            // 重置按钮点击事件
+            $('#resetBtn').click(function () {
+                $('#statusFilter').val('all');
+                loadUsers();
+            });
+
+            // 确认更新按钮点击事件
+            $('#confirmUpdateBtn').click(function () {
+                if (currentUserName === null) {
+                    alert('请选择要更新的用户');
+                    return;
+                }
+
+                const status = $('#modalStatus').val();
+                updateUserStatus(currentUserName, status);
+            });
+
+            // 新增用户按钮点击事件
+            $('#addUserBtn').click(function () {
+                $('#addUserModal').modal('show');
+            });
+
+            // 确认添加按钮点击事件
+            $('#confirmAddBtn').click(function () {
+                addNewUser();
+            });
+        });
+
+        // 新增用户
+        function addNewUser() {
+            const userName = $('#newUserName').val();
+            const password = $('#newUserPassword').val();
+            const role = $('#newUserRole').val();
+            const status = $('#newUserStatus').val();
+            const opsType = $('#newUserOpsType').val();
+
+            if (userName === '' || password === '') {
+                alert('用户名和密码不能为空');
+                return;
+            }
+
+            $.ajax({
+                url: API_URL + '/users',
+                type: 'POST',
+                data: JSON.stringify({
+                    user_name: userName,
+                    password: password,
+                    role: role,
+                    status: parseInt(status),
+                    ops_type: opsType
+                }),
+                contentType: 'application/json',
+                success: function (response) {
+                    alert('添加成功');
+                    $('#addUserModal').modal('hide');
+                    // 清空表单
+                    $('#newUserName').val('');
+                    $('#newUserPassword').val('');
+                    $('#newUserRole').val('operator');
+                    $('#newUserStatus').val('1');
+                    $('#newUserOpsType').val('system');
+                    // 重新加载用户列表
+                    loadUsers();
+                },
+                error: function (xhr, status, error) {
+                    alert('添加失败: ' + error);
+                }
+            });
+        }
+
+        // 加载所有用户
+        function loadUsers() {
+            $.ajax({
+                url: API_URL + '/users',
+                type: 'GET',
+                success: function (response) {
+                    renderUsers(response.users);
+                },
+                error: function (xhr, status, error) {
+                    alert('加载用户失败: ' + error);
+                }
+            });
+        }
+
+        // 根据状态加载用户
+        function loadUsersByStatus(status) {
+            $.ajax({
+                url: API_URL + '/users/status?status=' + status,
+                type: 'GET',
+                success: function (response) {
+                    renderUsers(response.users);
+                },
+                error: function (xhr, status, error) {
+                    alert('加载用户失败: ' + error);
+                }
+            });
+        }
+
+        // 渲染用户列表
+        // 在现有JavaScript代码中添加删除功能
+
+        // 添加全局变量存储要删除的用户名
+        let userToDelete = null;
+
+        // 修改renderUsers函数，添加删除按钮
+        function renderUsers(users) {
+            const tableBody = $('#userTableBody');
+            tableBody.empty();
+
+            if (users.length === 0) {
+                tableBody.append('<tr><td colspan="6" class="text-center">没有找到用户</td></tr>');
+                return;
+            }
+
+            users.forEach(function (user) {
+                const statusBadge = user.status === 1 ?
+                    '<span class="status-badge status-active">工作中</span>' :
+                    '<span class="status-badge status-inactive">非工作中</span>';
+
+                const opsTypeText = user.ops_type === 'system' ? '系统运维' :
+                    user.ops_type === 'it' ? 'IT运维' :
+                        user.ops_type || '未设置';
+
+                const row = $('<tr></tr>');
+                row.append('<td>' + user.id + '</td>');
+                row.append('<td>' + user.user_name + '</td>');
+                row.append('<td>' + user.role + '</td>');
+                row.append('<td>' + opsTypeText + '</td>');
+                row.append('<td>' + statusBadge + '</td>');
+                row.append(
+                    '<td>' +
+                    '<button class="btn btn-primary action-btn" onclick="showUpdateStatusModal(' + user.id + ', \'' + user.user_name + '\', ' + user.status + ', \'' + (user.ops_type || '') + '\')">' +
+                    '<i class="fas fa-edit"></i> 更新状态' +
+                    '</button>' +
+                    '<button class="btn btn-danger action-btn" onclick="showDeleteUserModal(\'' + user.user_name + '\')">' +
+                    '<i class="fas fa-trash"></i> 删除' +
+                    '</button>' +
+                    '</td>'
+                );
+
+                tableBody.append(row);
+            });
+        }
+
+        // 显示删除确认模态框
+        function showDeleteUserModal(userName) {
+            userToDelete = userName;
+            $('#deleteModalUserName').text(userName);
+            $('#deleteUserModal').modal('show');
+        }
+
+        // 确认删除用户
+        $('#confirmDeleteBtn').click(function () {
+            if (!userToDelete) {
+                alert('请选择要删除的用户');
+                return;
+            }
+
+            $.ajax({
+                url: API_URL + '/users?user_name=' + encodeURIComponent(userToDelete),
+                type: 'DELETE',
+                success: function (response) {
+                    alert('用户删除成功');
+                    $('#deleteUserModal').modal('hide');
+                    userToDelete = null;
+                    loadUsers(); // 重新加载用户列表
+                },
+                error: function (xhr, status, error) {
+                    alert('删除失败: ' + (xhr.responseJSON?.error || error));
+                }
+            });
+        });
+
+        // 添加密码输入框到新增用户模态框
+        // 在新增用户模态框的表单中添加密码输入框
+
+        // 显示更新状态模态框
+        function showUpdateStatusModal(userId, userName, status, opsType) {
+            currentUserName = userName;
+            $('#modalUserName').text(userName);
+            $('#modalStatus').val(status);
+            $('#modalOpsType').val(opsType || 'system');
+            $('#updateStatusModal').modal('show');
+        }
+
+        // 更新用户状态
+        function updateUserStatus(userName, status) {
+            const opsType = $('#modalOpsType').val();
+            // 先更新状态
+            $.ajax({
+                url: API_URL + '/users/status?user_name=' + userName + '&status=' + status,
+                type: 'PUT',
+                success: function (response) {
+                    // 再更新运维类型
+                    $.ajax({
+                        url: API_URL + '/users/type?user_name=' + userName + '&ops_type=' + opsType,
+                        type: 'PUT',
+                        success: function (response) {
+                            alert('更新成功');
+                            $('#updateStatusModal').modal('hide');
+                            loadUsers();
+                        },
+                        error: function (xhr, status, error) {
+                            alert('更新运维类型失败: ' + error);
+                        }
+                    });
+                },
+                error: function (xhr, status, error) {
+                    alert('更新状态失败: ' + error);
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
