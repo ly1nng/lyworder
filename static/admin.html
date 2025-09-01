@@ -1087,6 +1087,7 @@
                                     <i class="fas fa-users"></i>
                                     <span>处理人</span>
                                 </div>
+                                ${ticket.status === 'open' ? `
                                 <div class="operator-selector">
                                     <select class="select2-multiple" multiple data-ticket-id="${ticket.id}">
                                         ${operators.map(operator =>
@@ -1096,6 +1097,9 @@
                     ).join('')}
                                     </select>
                                 </div>
+                                ` : `
+                                <div class="meta-value" style="font-weight: 500;">${ticket.operator_name || '未分配'}</div>
+                                `}
                             </div>
                             <div>
                                 <div class="meta-label">创建时间</div>
