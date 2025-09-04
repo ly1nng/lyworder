@@ -6,42 +6,12 @@
         <p>管理系统用户账户和权限</p>
       </div>
       <div class="header-actions">
-        <el-button type="primary" @click="showAddUserDialog = true">
+        <el-button type="primary" @click="showAddUser">
           <el-icon><Plus /></el-icon>
           添加用户
         </el-button>
       </div>
     </div>
-
-    <!-- 搜索和筛选区域 -->
-    <el-card class="search-card">
-      <div class="search-section">
-        <div class="search-inputs">
-          <el-input
-            v-model="searchForm.username"
-            placeholder="搜索用户名"
-            @keyup.enter="searchUsers"
-            clearable
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-          <el-select v-model="searchForm.role" placeholder="角色筛选" clearable>
-            <el-option label="运维人员" value="operator" />
-            <el-option label="管理员" value="admin" />
-          </el-select>
-          <el-select v-model="searchForm.status" placeholder="状态筛选" clearable>
-            <el-option label="激活" :value="1" />
-            <el-option label="禁用" :value="0" />
-          </el-select>
-        </div>
-        <div class="search-actions">
-          <el-button @click="searchUsers">搜索</el-button>
-          <el-button @click="resetSearch">重置</el-button>
-        </div>
-      </div>
-    </el-card>
 
     <!-- 用户列表 -->
     <el-card class="users-card">
@@ -54,8 +24,8 @@
 
       <el-table :data="users" v-loading="loading" stripe>
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="user_name" label="用户名" min-width="120" />
-        <el-table-column prop="ops_type" label="运维类型" min-width="100">
+        <el-table-column prop="user_name" label="用户名" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="ops_type" label="运维类型" min-width="100" show-overflow-tooltip>
           <template #default="{ row }">
             <el-tag v-if="row.ops_type" type="info" size="small">
               {{ getOpsTypeText(row.ops_type) }}
@@ -63,7 +33,7 @@
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="role" label="角色" width="100">
+        <el-table-column prop="role" label="角色" width="100" show-overflow-tooltip>
           <template #default="{ row }">
             <el-tag
               :type="getRoleType(row.role)"
@@ -73,28 +43,29 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="80">
+        <el-table-column prop="status" label="工作状态" width="100" show-overflow-tooltip>
           <template #default="{ row }">
             <el-tag
-              :type="row.status === 1 ? 'success' : 'danger'"
+              :type="row.status === 1 ? 'success' : 'info'"
               size="small"
             >
-              {{ row.status === 1 ? '激活' : '禁用' }}
+              {{ row.status === 1 ? '工作中' : '非工作' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="180">
+        <el-table-column prop="created_at" label="创建时间" width="180" show-overflow-tooltip>
           <template #default="{ row }">
             {{ formatDate(row.created_at) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="225" fixed="right">
           <template #default="{ row }">
-            <div class="action-buttons">
+            <div class="button-group">
               <el-button
                 type="primary"
                 size="small"
                 @click="editUser(row)"
+                class="action-button"
               >
                 编辑
               </el-button>
@@ -102,13 +73,15 @@
                 :type="row.status === 1 ? 'warning' : 'success'"
                 size="small"
                 @click="toggleUserStatus(row)"
+                class="action-button"
               >
-                {{ row.status === 1 ? '禁用' : '启用' }}
+                {{ row.status === 1 ? '设为非工作' : '设为工作中' }}
               </el-button>
               <el-button
                 type="danger"
                 size="small"
                 @click="deleteUser(row)"
+                class="action-button"
               >
                 删除
               </el-button>
@@ -122,8 +95,10 @@
           v-model:current-page="currentPage"
           :page-size="pageSize"
           :total="total"
-          layout="total, prev, pager, next"
+          layout="total, prev, pager, next, jumper"
           @current-change="loadUsers"
+          :page-sizes="[10, 20, 50]"
+          @size-change="handleSizeChange"
         />
       </div>
     </el-card>
@@ -132,7 +107,9 @@
     <el-dialog
       v-model="showAddUserDialog"
       :title="editingUser ? '编辑用户' : '添加用户'"
-      width="500px"
+      :width="isMobile ? '95%' : '500px'"
+      :class="{ 'mobile-dialog': isMobile }"
+      :top="isMobile ? '5vh' : '15vh'"
     >
       <el-form
         ref="userFormRef"
@@ -160,10 +137,10 @@
             <el-option label="IT运维" value="it" />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态" prop="status">
+        <el-form-item label="工作状态" prop="status">
           <el-radio-group v-model="userForm.status">
-            <el-radio :label="1">激活</el-radio>
-            <el-radio :label="0">禁用</el-radio>
+            <el-radio :label="1">工作中</el-radio>
+            <el-radio :label="0">非工作</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
@@ -181,10 +158,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search } from '@element-plus/icons-vue'
+import { Plus } from '@element-plus/icons-vue'
 import api from '@/api'
+import { useAppStore } from '@/stores/app'
+
+const appStore = useAppStore()
 
 // 响应式数据
 const loading = ref(false)
@@ -197,17 +177,13 @@ const showAddUserDialog = ref(false)
 const editingUser = ref(null)
 const userFormRef = ref()
 
-// 搜索表单
-const searchForm = reactive({
-  username: '',
-  role: '',
-  status: ''
-})
+// 是否为移动端
+const isMobile = computed(() => appStore.isMobile)
 
 // 用户表单
 const userForm = reactive({
   user_name: '',
-  role: 'user',
+  role: 'operator',
   ops_type: '',
   status: 1
 })
@@ -229,35 +205,35 @@ const loadUsers = async (page = 1) => {
   try {
     const params = {
       page,
-      limit: pageSize.value,
-      ...searchForm
+      limit: pageSize.value
     }
     const response = await api.get('/operator/users', { params })
-    // 后端返回的是 { users: [...] }，没有total字段
-    // 先处理用户列表
-    users.value = response.users || []
-    // 暂时使用用户数组长度作为总数（后续需要后端支持分页）
-    total.value = users.value.length
+    // 正确处理分页数据
+    if (response && Array.isArray(response.users)) {
+      users.value = response.users
+      // 如果后端返回了total字段，则使用它；否则使用用户数组长度
+      total.value = response.total || response.users.length
+    } else {
+      // 如果响应格式不正确，使用空数组
+      users.value = []
+      total.value = 0
+    }
     currentPage.value = page
   } catch (error) {
     ElMessage.error('加载用户列表失败')
     console.error('Load users error:', error)
+    // 出错时清空数据
+    users.value = []
+    total.value = 0
   }
   loading.value = false
 }
 
-const searchUsers = () => {
+// 处理页面大小变化
+const handleSizeChange = (val) => {
+  pageSize.value = val
   currentPage.value = 1
   loadUsers(1)
-}
-
-const resetSearch = () => {
-  Object.assign(searchForm, {
-    username: '',
-    role: '',
-    status: ''
-  })
-  searchUsers()
 }
 
 const editUser = (user) => {
@@ -268,6 +244,15 @@ const editUser = (user) => {
     ops_type: user.ops_type || '',
     status: user.status
   })
+  showAddUserDialog.value = true
+}
+
+const showAddUser = () => {
+  // 重置编辑状态
+  editingUser.value = null
+  // 重置表单
+  resetUserForm()
+  // 显示对话框
   showAddUserDialog.value = true
 }
 
@@ -307,7 +292,7 @@ const saveUser = async () => {
 
 const toggleUserStatus = async (user) => {
   const newStatus = user.status === 1 ? 0 : 1
-  const action = newStatus === 1 ? '启用' : '禁用'
+  const action = newStatus === 1 ? '设为工作中' : '设为非工作'
   
   try {
     await ElMessageBox.confirm(
@@ -407,7 +392,8 @@ onMounted(() => {
 <style scoped>
 .user-management {
   padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* 移动端优化：简化背景渐变 */
+  background: #667eea;
   min-height: calc(100vh - 60px);
 }
 
@@ -436,8 +422,8 @@ onMounted(() => {
 .search-card {
   margin-bottom: 20px;
   border-radius: 12px;
+  /* 移动端优化：禁用毛玻璃效果 */
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
   background: rgba(255, 255, 255, 0.95);
 }
 
@@ -466,8 +452,8 @@ onMounted(() => {
 
 .users-card {
   border-radius: 12px;
+  /* 移动端优化：禁用毛玻璃效果 */
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
   background: rgba(255, 255, 255, 0.95);
 }
 
@@ -481,6 +467,7 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   margin-top: 20px;
+  padding: 10px 0;
 }
 
 .text-muted {
@@ -493,29 +480,49 @@ onMounted(() => {
   gap: 8px;
 }
 
-/* 操作按钮水平排列样式 */
-.action-buttons {
+.button-group {
   display: flex;
-  gap: 8px;
-  padding: 8px 0;
+  gap: 6px;
+  flex-wrap: nowrap;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 100%;
 }
 
-.action-buttons .el-button {
-  margin: 0;
-  min-width: 60px;
+.action-button {
+  min-width: 80px;
   padding: 8px 12px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
-.action-buttons .el-button[size="small"] {
-  font-size: 12px;
-  height: 32px;
-  line-height: 1;
+/* 移动端对话框优化 */
+.mobile-dialog {
+  margin: 0 auto !important;
+}
+
+.mobile-dialog :deep(.el-dialog__body) {
+  padding: 16px;
+}
+
+.mobile-dialog :deep(.el-form-item__label) {
+  font-size: 14px;
+}
+
+.mobile-dialog :deep(.el-input__inner) {
+  font-size: 14px;
+}
+
+.mobile-dialog :deep(.el-select) {
+  width: 100%;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
   .user-management {
     padding: 15px;
+    /* 移动端优化：进一步简化背景 */
+    background: #667eea;
   }
 
   .page-header {
@@ -541,27 +548,113 @@ onMounted(() => {
     font-size: 14px;
   }
 
+  .el-table .el-table__cell {
+    padding: 8px 0;
+  }
+
   .el-dialog {
     width: 90%;
     margin: 0 5%;
   }
   
-  /* 移动端操作按钮优化 */
-  .el-table__body .el-button {
-    margin-right: 6px;
-    min-width: 50px;
+  .button-group {
+    flex-direction: row;
+    gap: 4px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+  
+  .action-button {
+    min-width: 70px;
     padding: 6px 10px;
-  }
-  
-  .el-table__body .el-button[size="small"] {
     font-size: 12px;
-    height: 28px;
+    white-space: nowrap;
   }
   
-  /* 移动端操作按钮水平排列优化 */
-  .action-buttons {
-    gap: 6px;
-    padding: 6px 0;
+  .pagination-container {
+    margin-top: 15px;
+    padding: 8px 0;
+  }
+  
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  /* 移动端优化：简化卡片样式 */
+  .users-card,
+  .search-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .page-header {
+    margin-bottom: 16px;
+    padding: 16px 0;
+  }
+  
+  .header-content h1 {
+    font-size: 1.5rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  .header-content p {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-management {
+    padding: 12px;
+  }
+  
+  .page-header {
+    padding: 12px 0;
+  }
+  
+  .header-content h1 {
+    font-size: 1.25rem;
+  }
+  
+  .el-table {
+    font-size: 12px;
+  }
+  
+  .el-dialog {
+    width: 95%;
+    margin: 0 2.5%;
+  }
+  
+  .button-group {
+    gap: 2px;
+    flex-shrink: 0;
+    width: 100%;
+  }
+  
+  .action-button {
+    min-width: 60px;
+    padding: 4px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  
+  .pagination-container {
+    margin-top: 12px;
+  }
+  
+  /* 移动端优化：禁用复杂动画 */
+  .users-card,
+  .search-card {
+    transition: none;
+  }
+  
+  .action-button {
+    transition: none;
+  }
+  
+  .el-table .el-table__cell {
+    transition: none;
   }
 }
 </style>

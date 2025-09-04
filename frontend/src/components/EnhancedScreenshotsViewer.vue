@@ -1,7 +1,7 @@
 <template>
   <div class="enhanced-screenshots-viewer">
     <!-- 快速操作栏 -->
-    <div class="viewer-toolbar">
+    <div class="viewer-toolbar" :class="{ 'mobile-hidden': isMobile && !showControls }">
       <div class="toolbar-left">
         <span class="image-counter">{{ currentIndex + 1 }} / {{ images.length }}</span>
       </div>
@@ -104,6 +104,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useAppStore } from '@/stores/app'
 import {
   ArrowLeft,
   ArrowRight,
@@ -132,6 +133,10 @@ const props = defineProps({
 
 // Emits
 const emit = defineEmits(['close', 'show-grid'])
+
+// 使用appStore检测是否为移动端
+const appStore = useAppStore()
+const isMobile = computed(() => appStore.isMobile)
 
 // 响应式数据
 const currentIndex = ref(props.initialIndex)
@@ -194,8 +199,8 @@ const toggleFullscreen = () => {
 const toggleControlsVisibility = () => {
   showControls.value = !showControls.value
   
-  if (showControls.value) {
-    // 3秒后自动隐藏控制元素
+  if (showControls.value && isMobile.value) {
+    // 移动端3秒后自动隐藏控制元素
     clearTimeout(controlsTimeout.value)
     controlsTimeout.value = setTimeout(() => {
       showControls.value = false
@@ -232,9 +237,11 @@ onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
   
   // 初始化控制元素自动隐藏
-  controlsTimeout.value = setTimeout(() => {
-    showControls.value = false
-  }, 3000)
+  if (isMobile.value) {
+    controlsTimeout.value = setTimeout(() => {
+      showControls.value = false
+    }, 3000)
+  }
 })
 
 onUnmounted(() => {
@@ -269,6 +276,19 @@ onUnmounted(() => {
 .viewer-toolbar.hidden {
   transform: translateY(-100%);
   opacity: 0;
+}
+
+/* 移动端优化：在移动端默认隐藏工具栏 */
+@media (max-width: 768px) {
+  .viewer-toolbar {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  
+  .viewer-toolbar.mobile-hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
 }
 
 .toolbar-left .image-counter {
@@ -440,6 +460,28 @@ onUnmounted(() => {
     width: 50px;
     height: 50px;
   }
+  
+  /* 移动端优化：禁用复杂动画以提高性能 */
+  .thumbnail-item {
+    transition: none;
+  }
+  
+  .thumbnail-item:hover {
+    transform: none;
+  }
+  
+  .thumbnail-item.active {
+    transform: none;
+  }
+  
+  .nav-button {
+    transition: none;
+  }
+  
+  .nav-button:hover {
+    transform: translateY(-50%) scale(1.1);
+    background: rgba(255, 255, 255, 0.3);
+  }
 }
 
 @media (max-width: 480px) {
@@ -475,6 +517,16 @@ onUnmounted(() => {
   .thumbnail-index {
     font-size: 9px;
     padding: 1px 3px;
+  }
+  
+  /* 移动端优化：进一步简化样式 */
+  .viewer-toolbar,
+  .thumbnail-strip {
+    transition: none;
+  }
+  
+  .navigation-arrows {
+    transition: none;
   }
 }
 </style>

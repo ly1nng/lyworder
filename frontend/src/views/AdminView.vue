@@ -144,7 +144,7 @@
       
       <!-- 分页 -->
       <AppPagination
-        v-if="!loading && tickets.length > 0"
+        v-if="!loading && tickets.length > 0 && !isMobile"
         :total="total"
         :page="currentPage"
         :limit="pageSize"
@@ -156,8 +156,10 @@
     <el-dialog
       v-model="remarkDialogVisible"
       title="编辑备注"
-      width="600px"
+      :width="isMobile ? '95%' : '600px'"
       class="edit-dialog"
+      :class="{ 'mobile-dialog': isMobile }"
+      :top="isMobile ? '5vh' : '15vh'"
     >
       <div class="dialog-content">
         <div class="ticket-info">
@@ -172,8 +174,6 @@
               type="textarea"
               :rows="6"
               placeholder="请输入备注信息..."
-              maxlength="1000"
-              show-word-limit
             />
           </el-form-item>
         </el-form>
@@ -199,8 +199,10 @@
     <el-dialog
       v-model="solutionDialogVisible"
       title="编辑解决方案"
-      width="600px"
+      :width="isMobile ? '95%' : '600px'"
       class="edit-dialog"
+      :class="{ 'mobile-dialog': isMobile }"
+      :top="isMobile ? '5vh' : '15vh'"
     >
       <div class="dialog-content">
         <div class="ticket-info">
@@ -215,8 +217,6 @@
               type="textarea"
               :rows="6"
               placeholder="请输入解决方案..."
-              maxlength="2000"
-              show-word-limit
             />
           </el-form-item>
         </el-form>
@@ -242,8 +242,10 @@
     <el-dialog
       v-model="typeDialogVisible"
       title="修改工单类型"
-      width="500px"
+      :width="isMobile ? '95%' : '500px'"
       class="edit-dialog"
+      :class="{ 'mobile-dialog': isMobile }"
+      :top="isMobile ? '5vh' : '15vh'"
       destroy-on-close
     >
       <div class="dialog-content">
@@ -288,8 +290,10 @@
     <el-dialog
       v-model="operatorDialogVisible"
       title="分配处理人"
-      width="500px"
+      :width="isMobile ? '95%' : '500px'"
       class="edit-dialog"
+      :class="{ 'mobile-dialog': isMobile }"
+      :top="isMobile ? '5vh' : '15vh'"
       destroy-on-close
     >
       <div class="dialog-content">
@@ -432,6 +436,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useAppStore } from '@/stores/app'
 import { ticketApi, userApi } from '@/api'
 import SearchForm from '@/components/SearchForm.vue'
 import OperatorTicketCard from '@/components/OperatorTicketCard.vue'
@@ -451,6 +456,8 @@ import {
   Picture,
   ZoomIn
 } from '@element-plus/icons-vue'
+
+const appStore = useAppStore()
 
 // 组件引用
 const searchFormRef = ref(null)
@@ -491,7 +498,10 @@ const typeForm = ref({
 
 const operatorForm = ref({
   operator_name: ''
-}) // 新增处理人表单数据
+}) // 处理人表单数据
+
+// 是否为移动端
+const isMobile = computed(() => appStore.isMobile)
 
 // 统计数据
 const stats = computed(() => {
@@ -511,9 +521,9 @@ const fetchTickets = async () => {
   try {
     loading.value = true
     
+    // 移动端显示全部工单，不分页
     const params = {
-      page: currentPage.value,
-      limit: pageSize.value,
+      ...(isMobile.value ? {} : { page: currentPage.value, limit: pageSize.value }),
       ...searchParams.value
     }
     
@@ -1255,178 +1265,33 @@ onMounted(() => {
   font-size: 12px;
 }
 
-/* 截图全屏对话框样式 */
-:deep(.screenshots-fullscreen-dialog) {
-  .el-dialog {
-    margin: 2vh auto;
-    max-height: 96vh;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .el-dialog__header {
-    background: linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-light-3));
-    color: white;
-    padding: 12px 20px;
-    margin: 0;
-    border-radius: var(--el-border-radius-base) var(--el-border-radius-base) 0 0;
-    flex-shrink: 0;
-  }
-  
-  .el-dialog__title {
-    color: white;
-    font-weight: 600;
-    font-size: 16px;
-  }
-  
-  .el-dialog__close {
-    color: white;
-    font-size: 18px;
-  }
-  
-  .el-dialog__close:hover {
-    color: rgba(255, 255, 255, 0.8);
-  }
-  
-  .el-dialog__body {
-    padding: 16px 20px 20px;
-    flex: 1;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
+/* 移动端对话框优化 */
+.mobile-dialog {
+  margin: 0 auto !important;
 }
 
-.fullscreen-screenshots-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
+.mobile-dialog :deep(.el-dialog__body) {
+  padding: 16px;
 }
 
-.dialog-header-info {
-  padding: 0 0 12px 0;
-  margin-bottom: 16px;
-  border-bottom: 1px solid var(--el-border-color-light);
-  flex-shrink: 0;
+.mobile-dialog .ticket-info h4 {
+  font-size: 16px;
 }
 
-.dialog-description {
-  margin: 0;
-  color: var(--el-text-color-regular);
-  font-size: 13px;
-  text-align: center;
-  background: var(--el-color-info-light-9);
-  padding: 8px 12px;
-  border-radius: var(--el-border-radius-base);
-  border-left: 3px solid var(--el-color-primary);
-}
-
-.fullscreen-screenshots-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
-  flex: 1;
-  overflow-y: auto;
-  padding: 0 4px;
-  margin-bottom: 16px;
-  min-height: 0;
-  max-height: 70vh;
-}
-
-.fullscreen-screenshot-thumb {
-  aspect-ratio: 1;
-  border-radius: var(--el-border-radius-base);
-  overflow: hidden;
-  position: relative;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: 2px solid var(--el-border-color-light);
-  background: var(--el-bg-color-page);
-}
-
-.fullscreen-screenshot-thumb:hover {
-  transform: scale(1.02);
-  border-color: var(--el-color-primary);
-  box-shadow: var(--el-box-shadow);
-}
-
-.fullscreen-thumb-image {
-  width: 100%;
-  height: 100%;
-}
-
-.fullscreen-thumb-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.4);
-  color: white;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 8px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.fullscreen-screenshot-thumb:hover .fullscreen-thumb-overlay {
-  opacity: 1;
-}
-
-.thumb-index {
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  align-self: flex-start;
-}
-
-.thumb-actions {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.dialog-footer-actions {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid var(--el-border-color-light);
-  flex-shrink: 0;
-}
-
-.thumb-placeholder,
-.thumb-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: 8px;
-  color: var(--el-text-color-placeholder);
-  background: var(--el-bg-color-page);
+.mobile-dialog .ticket-id {
   font-size: 12px;
 }
 
-:deep(.el-form-item__label) {
-  font-weight: 500;
-  color: var(--text-primary);
+.mobile-dialog :deep(.el-form-item__label) {
+  font-size: 14px;
 }
 
-:deep(.el-textarea__inner) {
-  border-radius: var(--border-radius);
-  transition: all 0.3s ease;
+.mobile-dialog :deep(.el-textarea__inner) {
+  font-size: 14px;
 }
 
-:deep(.el-textarea__inner:focus) {
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+.mobile-dialog :deep(.el-select) {
+  width: 100%;
 }
 
 /* 响应式设计 */
@@ -1628,5 +1493,34 @@ onMounted(() => {
     font-size: 11px;
     padding: 3px 6px;
   }
+}
+
+/* 移动端对话框优化 */
+.mobile-dialog {
+  margin: 0 auto !important;
+}
+
+.mobile-dialog :deep(.el-dialog__body) {
+  padding: 16px;
+}
+
+.mobile-dialog .ticket-info h4 {
+  font-size: 16px;
+}
+
+.mobile-dialog .ticket-id {
+  font-size: 12px;
+}
+
+.mobile-dialog :deep(.el-form-item__label) {
+  font-size: 14px;
+}
+
+.mobile-dialog :deep(.el-textarea__inner) {
+  font-size: 14px;
+}
+
+.mobile-dialog :deep(.el-select) {
+  width: 100%;
 }
 </style>

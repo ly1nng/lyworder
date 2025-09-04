@@ -89,7 +89,7 @@
       
       <!-- 分页 -->
       <AppPagination
-        v-if="!loading && tickets.length > 0"
+        v-if="!loading && tickets.length > 0 && !isMobile"
         :total="total"
         :page="currentPage"
         :limit="pageSize"
@@ -101,8 +101,10 @@
     <el-dialog
       v-model="remarkDialogVisible"
       title="编辑备注"
-      width="600px"
+      :width="isMobile ? '95%' : '600px'"
       class="edit-dialog"
+      :class="{ 'mobile-dialog': isMobile }"
+      :top="isMobile ? '5vh' : '15vh'"
     >
       <div class="dialog-content">
         <div class="ticket-info">
@@ -117,8 +119,6 @@
               type="textarea"
               :rows="6"
               placeholder="请输入备注信息..."
-              maxlength="1000"
-              show-word-limit
             />
           </el-form-item>
         </el-form>
@@ -144,8 +144,10 @@
     <el-dialog
       v-model="solutionDialogVisible"
       title="编辑解决方案"
-      width="600px"
+      :width="isMobile ? '95%' : '600px'"
       class="edit-dialog"
+      :class="{ 'mobile-dialog': isMobile }"
+      :top="isMobile ? '5vh' : '15vh'"
     >
       <div class="dialog-content">
         <div class="ticket-info">
@@ -160,8 +162,6 @@
               type="textarea"
               :rows="6"
               placeholder="请输入解决方案..."
-              maxlength="2000"
-              show-word-limit
             />
           </el-form-item>
         </el-form>
@@ -282,6 +282,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { useAppStore } from '@/stores/app'
 import { ticketApi } from '@/api'
 import SearchForm from '@/components/SearchForm.vue'
 import OperatorTicketCard from '@/components/OperatorTicketCard.vue'
@@ -299,6 +300,7 @@ import {
 } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
+const appStore = useAppStore()
 
 // 组件引用
 const searchFormRef = ref(null)
@@ -342,15 +344,19 @@ const stats = computed(() => {
   }
 })
 
+// 是否为移动端
+const isMobile = computed(() => appStore.isMobile)
+
 // 获取工单列表
 const fetchTickets = async () => {
   try {
     loading.value = true
     
+    // 移动端显示全部工单，不分页
+    const isMobile = appStore.isMobile
     const params = {
       operator_name: userStore.userName,
-      page: currentPage.value,
-      limit: pageSize.value,
+      ...(isMobile ? {} : { page: currentPage.value, limit: pageSize.value }),
       ...searchParams.value
     }
     
@@ -918,6 +924,31 @@ onMounted(() => {
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 
+/* 移动端对话框优化 */
+.mobile-dialog {
+  margin: 0 auto !important;
+}
+
+.mobile-dialog :deep(.el-dialog__body) {
+  padding: 16px;
+}
+
+.mobile-dialog .ticket-info h4 {
+  font-size: 16px;
+}
+
+.mobile-dialog .ticket-id {
+  font-size: 12px;
+}
+
+.mobile-dialog :deep(.el-form-item__label) {
+  font-size: 14px;
+}
+
+.mobile-dialog :deep(.el-textarea__inner) {
+  font-size: 14px;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .my-operator-view {
@@ -1082,5 +1113,30 @@ onMounted(() => {
     font-size: 11px;
     padding: 3px 6px;
   }
+}
+
+/* 移动端对话框优化 */
+.mobile-dialog {
+  margin: 0 auto !important;
+}
+
+.mobile-dialog :deep(.el-dialog__body) {
+  padding: 16px;
+}
+
+.mobile-dialog .ticket-info h4 {
+  font-size: 16px;
+}
+
+.mobile-dialog .ticket-id {
+  font-size: 12px;
+}
+
+.mobile-dialog :deep(.el-form-item__label) {
+  font-size: 14px;
+}
+
+.mobile-dialog :deep(.el-textarea__inner) {
+  font-size: 14px;
 }
 </style>

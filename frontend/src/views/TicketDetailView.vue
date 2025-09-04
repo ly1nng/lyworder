@@ -88,11 +88,11 @@
               </div>
               <div class="meta-item">
                 <span class="meta-label">创建时间</span>
-                <span class="meta-value">{{ formatDateTimeToSecond(ticket.created_at) }}</span>
+                <span class="meta-value">{{ formatDate(ticket.created_at) }}</span>
               </div>
               <div class="meta-item">
                 <span class="meta-label">更新时间</span>
-                <span class="meta-value">{{ formatDateTimeToSecond(ticket.updated_at || ticket.created_at) }}</span>
+                <span class="meta-value">{{ formatDate(ticket.updated_at || ticket.created_at) }}</span>
               </div>
             </div>
           </div>
@@ -296,8 +296,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ticketApi } from '@/api'
-import { formatDate, formatDateTimeToSecond, getStatusText, getStatusType } from '@/utils/helpers'
-import ScreenshotsDisplay from '@/components/ScreenshotsDisplay.vue'
+import { formatDate, getStatusText, getStatusType } from '@/utils/helpers'
 import EnhancedScreenshotsViewer from '@/components/EnhancedScreenshotsViewer.vue'
 import {  
   DocumentCopy,
@@ -310,13 +309,6 @@ import {
   ZoomIn,
   Loading
 } from '@element-plus/icons-vue'
-
-const props = defineProps({
-  id: {
-    type: String,
-    required: true
-  }
-})
 
 const route = useRoute()
 const router = useRouter()
@@ -547,7 +539,8 @@ onMounted(() => {
 
 .section-card {
   background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(12px);
+  /* 移动端优化：禁用毛玻璃效果以提高性能 */
+  backdrop-filter: blur(0px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--border-radius-lg);
   padding: 24px;
@@ -973,6 +966,9 @@ onMounted(() => {
   
   .section-card {
     padding: 20px 16px;
+    /* 移动端优化：进一步简化卡片样式 */
+    box-shadow: var(--shadow);
+    border-radius: var(--border-radius);
   }
   
   .section-title {
@@ -1031,6 +1027,9 @@ onMounted(() => {
   
   .section-card {
     padding: 16px 12px;
+    /* 移动端优化：进一步简化卡片样式 */
+    box-shadow: var(--shadow);
+    border-radius: var(--border-radius);
   }
   
   .section-title {
@@ -1071,6 +1070,42 @@ onMounted(() => {
   .screenshot-index {
     font-size: 10px;
     padding: 3px 6px;
+  }
+  
+  /* 移动端优化：禁用复杂动画以提高性能 */
+  .section-card {
+    transition: none;
+  }
+  
+  .section-card:hover {
+    transform: none;
+    box-shadow: var(--shadow);
+  }
+  
+  .screenshot-item {
+    transition: none;
+  }
+  
+  .screenshot-item:hover {
+    transform: none;
+    box-shadow: var(--shadow);
+  }
+  
+  .screenshot-overlay {
+    transition: none;
+  }
+  
+  .fullscreen-screenshot-thumb {
+    transition: none;
+  }
+  
+  .fullscreen-screenshot-thumb:hover {
+    transform: none;
+    box-shadow: var(--shadow);
+  }
+  
+  .fullscreen-thumb-overlay {
+    transition: none;
   }
 }
 </style>

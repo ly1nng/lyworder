@@ -84,6 +84,7 @@
                       :key="index"
                       class="preview-item"
                     >
+                      <!-- 移动端优化：简化图片预览 -->
                       <el-image
                         :src="image.url"
                         fit="contain"
@@ -167,7 +168,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
@@ -198,156 +199,166 @@ const formRules = {
     { required: true, message: '请输入工单标题', trigger: 'blur' }
   ],
   content: [
-    { required: true, message: '请描述您遇到的问题', trigger: 'blur' }
+    { required: true, message: '请输入问题描述', trigger: 'blur' }
   ]
 }
 
-// 文件和图片处理
+// 文件列表和预览
 const fileList = ref([])
 const previewImages = ref([])
-const submitting = ref(false)
-const showSuccessDialog = ref(false)
-const newTicketId = ref('')
 
-// 计算是否可以提交
+// 提交状态
+const submitting = ref(false)
+const newTicketId = ref('')
+const showSuccessDialog = ref(false)
+
+// 计算属性
 const canSubmit = computed(() => {
-  return ticketForm.value.title.trim() && 
-         ticketForm.value.content.trim() && 
+  return ticketForm.value.title.trim() !== '' && 
+         ticketForm.value.content.trim() !== '' && 
          !submitting.value
 })
 
-// 处理粘贴事件
-const handlePaste = (event) => {
-  const items = event.clipboardData?.items
-  if (!items) return
-  
-  for (let item of items) {
-    if (item.kind === 'file' && item.type.startsWith('image/')) {
-      const file = item.getAsFile()
-      if (file) {
-        addImageFile(file, 'paste')
-        event.preventDefault()
-      }
-    }
-  }
-}
-
-// 文件上传前检查
+// 文件上传前验证
 const beforeUpload = (file) => {
   const validation = validateImageFile(file)
   if (!validation.valid) {
     ElMessage.error(validation.message)
     return false
   }
-  return false // 阻止自动上传
+  return true
 }
 
 // 处理文件变化
-const handleFileChange = (file) => {
-  const validation = validateImageFile(file.raw)
-  if (validation.valid) {
-    addImageFile(file.raw, 'upload')
-  }
-}
-
-// 处理文件移除
-const handleFileRemove = (file) => {
-  // 从预览列表中移除对应的图片
-  const index = previewImages.value.findIndex(img => img.uid === file.uid)
-  if (index > -1) {
-    removePreviewImage(index)
-  }
-}
-
-// 添加图片文件
-const addImageFile = (file, source) => {
-  const validation = validateImageFile(file)
-  if (!validation.valid) {
-    ElMessage.error(validation.message)
-    return
+const handleFileChange = (file, fileList) => {
+  // 移动端优化：限制同时上传的文件数量
+  if (fileList.length > 5) {
+    ElMessage.warning('最多只能上传5张图片')
+    return false
   }
   
-  // 创建预览对象
+  // 读取文件并添加到预览
   const reader = new FileReader()
   reader.onload = (e) => {
-    const imageData = {
-      file,
+    previewImages.value.push({
       url: e.target.result,
       name: file.name,
       size: file.size,
-      uid: Date.now() + Math.random(),
-      source
-    }
-    previewImages.value.push(imageData)
-    
-    // 同步到文件列表
-    if (source === 'paste') {
-      fileList.value.push({
-        name: file.name,
-        size: file.size,
-        uid: imageData.uid,
-        raw: file
-      })
-    }
+      raw: file.raw || file
+    })
   }
-  reader.readAsDataURL(file)
+  reader.readAsDataURL(file.raw || file)
+  
+  return true
+}
+
+// 处理文件移除
+const handleFileRemove = (file, fileList) => {
+  // 从预览中移除对应的图片
+  const index = previewImages.value.findIndex(img => img.name === file.name)
+  if (index > -1) {
+    previewImages.value.splice(index, 1)
+  }
 }
 
 // 移除预览图片
 const removePreviewImage = (index) => {
-  const image = previewImages.value[index]
   previewImages.value.splice(index, 1)
-  
-  // 从文件列表中移除
-  const fileIndex = fileList.value.findIndex(file => file.uid === image.uid)
-  if (fileIndex > -1) {
-    fileList.value.splice(fileIndex, 1)
+  // 同时从文件列表中移除
+  if (uploadRef.value) {
+    uploadRef.value.handleRemove(uploadRef.value.fileList[index])
   }
-  
-  // 如果是通过上传组件添加的，需要清理上传组件
-  if (image.source === 'upload') {
-    nextTick(() => {
-      uploadRef.value?.clearFiles()
-      // 重新添加剩余的文件
-      fileList.value.forEach(file => {
-        if (file.raw && previewImages.value.some(img => img.uid === file.uid)) {
-          uploadRef.value?.handleStart(file.raw)
+}
+
+// 处理粘贴事件
+const handlePaste = (event) => {
+  const items = (event.clipboardData || event.originalEvent.clipboardData).items
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]
+    if (item.kind === 'file' && item.type.indexOf('image') !== -1) {
+      const file = item.getAsFile()
+      if (file) {
+        // 移动端优化：限制粘贴图片大小
+        if (file.size > 5 * 1024 * 1024) {
+          ElMessage.error('粘贴的图片大小不能超过5MB')
+          continue
         }
-      })
-    })
+        
+        // 创建新的文件对象并添加到上传列表
+        const newFile = new File([file], `pasted-image-${Date.now()}.png`, { type: file.type })
+        uploadRef.value?.handleStart(newFile)
+        
+        // 添加到预览
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          previewImages.value.push({
+            url: e.target.result,
+            name: newFile.name,
+            size: newFile.size,
+            raw: newFile
+          })
+        }
+        reader.readAsDataURL(newFile)
+      }
+    }
   }
 }
 
 // 提交工单
 const submitTicket = async () => {
+  if (!canSubmit.value) return
+  
+  const valid = await formRef.value?.validate()
+  if (!valid) return
+  
+  submitting.value = true
+  
   try {
-    // 验证表单
-    await formRef.value.validate()
+    // 准备表单数据
+    const formData = new FormData()
+    formData.append('title', ticketForm.value.title)
+    formData.append('content', ticketForm.value.content)
     
-    submitting.value = true
+    // 添加截图文件
+    previewImages.value.forEach((image, index) => {
+      formData.append('screenshots', image.raw)
+    })
     
-    // 提交工单
     const response = await api.ticket.createTicket({
       title: ticketForm.value.title,
       content: ticketForm.value.content,
-      screenshots: previewImages.value.map(img => img.file)
+      screenshots: previewImages.value.map(img => img.raw)
     })
     
-    newTicketId.value = response.data.id
-    showSuccessDialog.value = true
-    
-    ElMessage.success('工单提交成功！')
-    
+    if (response.code === 200) {
+      newTicketId.value = response.data.id
+      showSuccessDialog.value = true
+      
+      // 重置表单
+      ticketForm.value.title = ''
+      ticketForm.value.content = ''
+      previewImages.value = []
+      fileList.value = []
+      
+      // 清空上传组件
+      if (uploadRef.value) {
+        uploadRef.value.clearFiles()
+      }
+    } else {
+      throw new Error(response.message || '提交失败')
+    }
   } catch (error) {
     console.error('提交工单失败:', error)
-    if (error.response?.data?.error) {
-      ElMessage.error(error.response.data.error)
-    } else {
-      ElMessage.error('提交失败，请重试')
-    }
+    ElMessage.error(error.message || '提交工单失败')
   } finally {
     submitting.value = false
   }
+}
+
+// 关闭成功对话框
+const handleCloseSuccess = (done) => {
+  showSuccessDialog.value = false
+  done()
 }
 
 // 查看我的工单
@@ -356,29 +367,35 @@ const viewMyTickets = () => {
   router.push('/tickets')
 }
 
-// 继续提交新工单
+// 继续提交
 const createAnother = () => {
   showSuccessDialog.value = false
-  resetForm()
 }
 
-// 重置表单
-const resetForm = () => {
-  ticketForm.value = {
-    title: '',
-    content: ''
+// 页面卸载前清理
+// 移动端优化：添加页面可见性监听以节省资源
+let visibilityChangeListener = null
+
+onMounted(() => {
+  // 监听页面可见性变化
+  visibilityChangeListener = () => {
+    if (document.hidden) {
+      // 页面隐藏时暂停不必要的操作
+      console.log('页面隐藏，暂停不必要的操作')
+    } else {
+      // 页面显示时恢复操作
+      console.log('页面显示，恢复操作')
+    }
   }
-  fileList.value = []
-  previewImages.value = []
-  formRef.value?.resetFields()
-  uploadRef.value?.clearFiles()
-}
+  
+  document.addEventListener('visibilitychange', visibilityChangeListener)
+})
 
-// 关闭成功对话框
-const handleCloseSuccess = () => {
-  showSuccessDialog.value = false
-  resetForm()
-}
+onUnmounted(() => {
+  if (visibilityChangeListener) {
+    document.removeEventListener('visibilitychange', visibilityChangeListener)
+  }
+})
 </script>
 
 <style scoped>

@@ -38,12 +38,8 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
-    /* 移动端优化：启用硬件加速 */
-    -webkit-transform: translateZ(0);
-    -moz-transform: translateZ(0);
-    -ms-transform: translateZ(0);
-    -o-transform: translateZ(0);
-    transform: translateZ(0);
+    /* 移动端优化：减少背景渐变复杂度 */
+    background: #f5f7fa;
 }
 
 #app {
@@ -57,13 +53,12 @@ body {
     border-radius: var(--border-radius-xl);
     padding: 12px 24px;
     font-weight: 500;
-    /* 移动端优化：简化过渡效果 */
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: var(--shadow);
 }
 
 .el-button--primary:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
 }
 
@@ -74,24 +69,16 @@ body {
 /* 卡片样式 */
 .glass-card {
     background: rgba(255, 255, 255, 0.9);
-    /* 移动端优化：在小屏幕设备上禁用backdrop-filter */
+    /* 移动端优化：禁用毛玻璃效果以提高性能 */
+    backdrop-filter: blur(0px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-lg);
-    /* 移动端优化：简化过渡效果 */
-    transition: all 0.2s ease;
-}
-
-/* 移动端禁用毛玻璃效果以提升性能 */
-@media (max-width: 768px) {
-    .glass-card {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: none;
-    }
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-4px);
     box-shadow: var(--shadow-xl);
 }
 
@@ -103,50 +90,41 @@ body {
 /* 毛玻璃导航栏 */
 .glass-header {
     background: rgba(255, 255, 255, 0.85);
-    /* 移动端优化：在小屏幕设备上禁用backdrop-filter */
+    /* 移动端优化：禁用毛玻璃效果以提高性能 */
+    backdrop-filter: blur(0px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: var(--shadow);
-}
-
-/* 移动端禁用毛玻璃效果以提升性能 */
-@media (max-width: 768px) {
-    .glass-header {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: none;
-    }
 }
 
 /* 动画效果 */
 .fade-enter-active,
 .fade-leave-active {
-    /* 移动端优化：简化过渡效果 */
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .fade-enter-from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px);
 }
 
 .fade-leave-to {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-20px);
 }
 
 .slide-enter-active,
 .slide-leave-active {
-    /* 移动端优化：简化过渡效果 */
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .slide-enter-from {
     opacity: 0;
-    transform: translateX(-15px);
+    transform: translateX(-20px);
 }
 
 .slide-leave-to {
     opacity: 0;
-    transform: translateX(15px);
+    transform: translateX(20px);
 }
 
 /* 响应式设计 */
@@ -159,6 +137,37 @@ body {
     .glass-card {
         border-radius: var(--border-radius);
         margin: 8px;
+        /* 移动端优化：进一步简化卡片样式 */
+        box-shadow: var(--shadow);
+    }
+
+    /* 移动端优化：简化背景 */
+    body {
+        background: #f5f7fa;
+    }
+}
+
+/* 移动端特殊优化 */
+@media (max-width: 480px) {
+
+    /* 禁用复杂动画以提高性能 */
+    .fade-enter-active,
+    .fade-leave-active,
+    .slide-enter-active,
+    .slide-leave-active {
+        transition: none;
+    }
+
+    /* 简化按钮效果 */
+    .el-button--primary,
+    .gradient-button {
+        transition: none;
+    }
+
+    .el-button--primary:hover,
+    .gradient-button:hover {
+        transform: none;
+        box-shadow: var(--shadow);
     }
 }
 
@@ -198,14 +207,53 @@ body {
     padding: 12px 24px;
     font-weight: 500;
     cursor: pointer;
-    /* 移动端优化：简化过渡效果 */
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: var(--shadow);
 }
 
 .btn-gradient:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
+}
+
+.gradient-button {
+    border: none;
+    border-radius: var(--border-radius-xl);
+    padding: 8px 16px;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow);
+    font-size: 12px;
+}
+
+.gradient-button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.gradient-button:active {
+    transform: translateY(0);
+}
+
+/* 为不同类型的按钮添加特定颜色的渐变样式，保持与Element Plus默认颜色一致 */
+.gradient-button.el-button--primary {
+    background: linear-gradient(135deg, #409eff, #1a73e8);
+    color: white;
+}
+
+.gradient-button.el-button--success {
+    background: linear-gradient(135deg, #67c23a, #458c27);
+    color: white;
+}
+
+.gradient-button.el-button--warning {
+    background: linear-gradient(135deg, #e6a23c, #c67a20);
+    color: white;
+}
+
+.gradient-button.el-button--info {
+    background: linear-gradient(135deg, #909399, #6c6f75);
+    color: white;
 }
 
 .status-badge {
@@ -236,28 +284,11 @@ body {
     border: 4px solid rgba(102, 126, 234, 0.3);
     border-left-color: var(--primary-color);
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    animation: spin 1s ease-in-out infinite;
 }
 
 @keyframes spin {
     to {
         transform: rotate(360deg);
-    }
-}
-
-/* 移动端性能优化 */
-@media (max-width: 768px) {
-
-    /* 禁用复杂动画以提升性能 */
-    * {
-        -webkit-animation-duration: 0.01ms !important;
-        animation-duration: 0.01ms !important;
-        -webkit-animation-iteration-count: 1 !important;
-        animation-iteration-count: 1 !important;
-    }
-
-    /* 简化过渡效果 */
-    * {
-        transition-duration: 0.1s !important;
     }
 }

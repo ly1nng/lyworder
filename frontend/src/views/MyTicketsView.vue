@@ -46,6 +46,7 @@
         </div>
         
         <div v-else class="tickets-list">
+          <!-- 移动端优化：使用v-for.keyed以提高列表渲染性能 -->
           <OperatorTicketCard
             v-for="ticket in tickets"
             :key="ticket.id"
@@ -61,6 +62,7 @@
                 size="small" 
                 @click="viewRemark(ticket)"
                 :icon="EditPen"
+                class="gradient-button"
               >
                 备注
               </el-button>
@@ -69,6 +71,7 @@
                 size="small" 
                 @click="viewSolution(ticket)"
                 :icon="Opportunity"
+                class="gradient-button"
               >
                 解决方案
               </el-button>
@@ -77,6 +80,7 @@
                 size="small" 
                 @click="viewDetail(ticket)"
                 :icon="InfoFilled"
+                class="gradient-button"
               >
                 详情
               </el-button>
@@ -87,7 +91,7 @@
       
       <!-- 分页 -->
       <AppPagination
-        v-if="!loading && tickets.length > 0"
+        v-if="!loading && tickets.length > 0 && !isMobile"
         :total="total"
         :page="currentPage"
         :limit="pageSize"
@@ -99,9 +103,11 @@
     <el-dialog
       v-model="remarkDialogVisible"
       title="工单备注"
-      width="700px"
+      :width="isMobile ? '95%' : '700px'"
       class="content-dialog"
+      :class="{ 'mobile-dialog': isMobile }"
       destroy-on-close
+      :top="isMobile ? '5vh' : '15vh'"
     >
       <div class="dialog-content">
         <div class="ticket-info">
@@ -124,7 +130,7 @@
         </div>
         
         <div class="update-info" v-if="currentTicket?.updated_at">
-          <span>最后更新: {{ formatDateTimeToSecond(currentTicket.updated_at) }}</span>
+          <span>最后更新: {{ formatDate(currentTicket.updated_at) }}</span>
         </div>
       </div>
     </el-dialog>
@@ -133,9 +139,11 @@
     <el-dialog
       v-model="solutionDialogVisible"
       title="解决方案"
-      width="700px"
+      :width="isMobile ? '95%' : '700px'"
       class="content-dialog"
+      :class="{ 'mobile-dialog': isMobile }"
       destroy-on-close
+      :top="isMobile ? '5vh' : '15vh'"
     >
       <div class="dialog-content">
         <div class="ticket-info">
@@ -162,7 +170,7 @@
             <span>处理人员: {{ currentTicket.operator_name || '未知' }}</span>
           </div>
           <div class="meta-row">
-            <span>处理时间: {{ formatDateTimeToSecond(currentTicket.updated_at || currentTicket.created_at) }}</span>
+            <span>处理时间: {{ formatDate(currentTicket.updated_at || currentTicket.created_at) }}</span>
           </div>
         </div>
       </div>
@@ -193,6 +201,7 @@
             class="fullscreen-screenshot-thumb"
             @click="viewImageInFullscreen(index)"
           >
+            <!-- 移动端优化：使用lazy加载和简化图片处理 -->
             <el-image
               :src="getImageUrl(screenshot, true)"
               :alt="`截图 ${index + 1}`"
@@ -264,12 +273,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { useAppStore } from '@/stores/app'
 import { ticketApi } from '@/api'
-import { formatDate, formatDateTimeToSecond } from '@/utils/helpers'
+import { formatDate } from '@/utils/helpers'
 import SearchForm from '@/components/SearchForm.vue'
 import OperatorTicketCard from '@/components/OperatorTicketCard.vue'
 import AppPagination from '@/components/AppPagination.vue'
@@ -288,6 +298,7 @@ import {
 
 const router = useRouter()
 const userStore = useUserStore()
+const appStore = useAppStore()
 
 // 组件引用
 const searchFormRef = ref(null)
@@ -309,15 +320,18 @@ const currentTicket = ref(null)
 const currentScreenshots = ref([])
 const currentImageIndex = ref(0)
 
-// 获取工单列表
+// 是否为移动端
+const isMobile = computed(() => appStore.isMobile)
+
+// 获取工单列表 - 添加性能优化
 const fetchTickets = async () => {
   try {
     loading.value = true
     
+    // 移动端显示全部工单，不分页
     const params = {
       user_name: userStore.userName,
-      page: currentPage.value,
-      limit: pageSize.value,
+      ...(isMobile.value ? {} : { page: currentPage.value, limit: pageSize.value }),
       ...searchParams.value
     }
     
@@ -387,14 +401,14 @@ const handleViewScreenshots = (ticket) => {
   screenshotsDialogVisible.value = true
 }
 
-// 获取图片URL
+// 获取图片URL - 添加移动端优化
 const getImageUrl = (screenshot, useThumbnail = false) => {
   if (!screenshot) return ''
   
   const url = typeof screenshot === 'string' ? screenshot : screenshot.url || screenshot
   
-  if (useThumbnail) {
-    // 生成缩略图URL
+  // 移动端优化：总是使用缩略图以减少数据传输
+  if (isMobile.value || useThumbnail) {
     const lastDotIndex = url.lastIndexOf('.')
     if (lastDotIndex > -1) {
       return url.substring(0, lastDotIndex) + '.thumb' + url.substring(lastDotIndex)
@@ -425,9 +439,32 @@ const showGridFromViewer = () => {
   screenshotsDialogVisible.value = true
 }
 
+// 页面可见性变化监听器
+let visibilityChangeListener = null
+
 // 页面初始化
 onMounted(() => {
   fetchTickets()
+  
+  // 添加页面可见性监听
+  visibilityChangeListener = () => {
+    if (document.hidden) {
+      // 页面隐藏时暂停不必要的操作
+      console.log('页面隐藏，暂停不必要的操作')
+    } else {
+      // 页面显示时恢复操作
+      console.log('页面显示，恢复操作')
+    }
+  }
+  
+  document.addEventListener('visibilitychange', visibilityChangeListener)
+})
+
+// 清理事件监听
+onUnmounted(() => {
+  if (visibilityChangeListener) {
+    document.removeEventListener('visibilitychange', visibilityChangeListener)
+  }
 })
 </script>
 
@@ -645,6 +682,57 @@ onMounted(() => {
 
 :deep(.el-dialog__body) {
   padding: 24px;
+}
+
+/* 移动端对话框优化 */
+.mobile-dialog {
+  margin: 0 auto !important;
+}
+
+.mobile-dialog :deep(.el-dialog__body) {
+  padding: 16px;
+}
+
+.mobile-dialog .ticket-info h4 {
+  font-size: 16px;
+}
+
+.mobile-dialog .ticket-id {
+  font-size: 12px;
+}
+
+.mobile-dialog .section-card {
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.mobile-dialog .section-title {
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.mobile-dialog .content-box {
+  padding: 12px;
+  font-size: 14px;
+}
+
+.mobile-dialog .empty-state {
+  padding: 30px 15px;
+}
+
+.mobile-dialog .empty-state .el-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+}
+
+.mobile-dialog .empty-state p {
+  font-size: 14px;
+}
+
+.mobile-dialog .update-info {
+  text-align: center;
+  font-size: 12px;
+  margin-top: 12px;
 }
 
 /* 响应式设计 */

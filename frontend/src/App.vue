@@ -14,8 +14,9 @@
       <!-- 主要内容区域 -->
       <main class="app-main" :class="{ 'with-header': showHeader }">
         <router-view v-slot="{ Component, route }">
+          <!-- 移动端优化：根据设备类型调整过渡动画 -->
           <transition 
-            :name="route.meta.transition || 'fade'"
+            :name="isMobile ? 'fade' : (route.meta.transition || 'fade')"
             mode="out-in"
           >
             <component :is="Component" :key="route.path" />
@@ -38,7 +39,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
@@ -54,6 +55,12 @@ const showHeader = computed(() => {
   const hideHeaderRoutes = ['/login']
   return !hideHeaderRoutes.includes(route.path) && userStore.isLoggedIn
 })
+
+// 移动端检测
+const isMobile = computed(() => appStore.isMobile)
+
+// 页面可见性状态
+const isPageVisible = ref(true)
 
 // 初始化应用
 onMounted(async () => {
@@ -74,6 +81,24 @@ onMounted(async () => {
 // 清理事件监听
 onUnmounted(() => {
   appStore.cleanup()
+})
+
+// 移动端优化：监听页面可见性变化
+const handleVisibilityChange = () => {
+  isPageVisible.value = !document.hidden
+  // 当页面重新可见时，可以触发一些更新操作
+  if (!document.hidden) {
+    console.log('页面重新可见')
+  }
+}
+
+// 添加页面可见性监听
+onMounted(() => {
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 

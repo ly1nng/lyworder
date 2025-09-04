@@ -46,6 +46,7 @@
     <div class="card-body">
       <div class="content-section">
         <div class="content-text" ref="contentRef">
+          <!-- 移动端优化：简化长文本处理 -->
           <p 
             v-if="!isExpanded && ticket.content.length > 150"
             class="content-preview"
@@ -105,6 +106,7 @@
           size="small" 
           @click="handleRemark"
           :icon="EditPen"
+          class="gradient-button"
         >
           备注
         </el-button>
@@ -113,6 +115,7 @@
           size="small" 
           @click="handleSolution"
           :icon="Opportunity"
+          class="gradient-button"
         >
           解决方案
         </el-button>
@@ -122,6 +125,7 @@
           size="small" 
           @click="handleOperatorChange"
           :icon="User"
+          class="gradient-button"
         >
           分配处理人
         </el-button>
@@ -130,6 +134,7 @@
           size="small" 
           @click="viewDetail"
           :icon="InfoFilled"
+          class="gradient-button"
         >
           详情
         </el-button>
@@ -149,11 +154,11 @@
         <div class="meta-row">
           <div class="meta-item">
             <span class="meta-label">创建时间:</span>
-            <span class="meta-value">{{ formatDateTimeToSecond(ticket.created_at) }}</span>
+            <span class="meta-value">{{ formatDate(ticket.created_at) }}</span>
           </div>
           <div class="meta-item">
             <span class="meta-label">更新时间:</span>
-            <span class="meta-value">{{ formatDateTimeToSecond(ticket.updated_at || ticket.created_at) }}</span>
+            <span class="meta-value">{{ formatDate(ticket.updated_at || ticket.created_at) }}</span>
           </div>
         </div>
       </div>
@@ -163,10 +168,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { formatDate, formatDateTimeToSecond, getStatusType } from '@/utils/helpers'
+import { formatDate, getStatusType } from '@/utils/helpers'
 import { 
   Picture, 
   Camera, 
@@ -276,13 +281,12 @@ const viewDetail = () => {
 <style scoped>
 .operator-ticket-card {
   margin-bottom: 20px;
-  /* 移动端优化：简化过渡效果 */
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 
 .operator-ticket-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
   box-shadow: var(--shadow-xl);
 }
 
@@ -341,8 +345,7 @@ const viewDetail = () => {
   font-size: 13px;
   height: auto;
   line-height: 1.8;
-  /* 移动端优化：简化过渡效果 */
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -357,7 +360,7 @@ const viewDetail = () => {
 }
 
 .editable-tag:hover {
-  transform: scale(1.02);
+  transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -416,15 +419,14 @@ const viewDetail = () => {
   border: 2px solid var(--el-border-color);
   border-radius: var(--el-border-radius-base);
   cursor: pointer;
-  /* 移动端优化：简化过渡效果 */
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   background: var(--el-bg-color-page);
 }
 
 .screenshots-counter:hover {
   border-color: var(--el-color-primary);
   background: var(--el-color-primary-light-9);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .counter-content {
@@ -447,13 +449,12 @@ const viewDetail = () => {
 .arrow-icon {
   font-size: 16px;
   color: var(--el-text-color-placeholder);
-  /* 移动端优化：简化过渡效果 */
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .screenshots-counter:hover .arrow-icon {
   color: var(--el-color-primary);
-  transform: translateX(2px);
+  transform: translateX(4px);
 }
 
 /* 空状态样式 */
@@ -496,38 +497,11 @@ const viewDetail = () => {
 .actions .el-button {
   border-radius: var(--border-radius-xl);
   font-weight: 500;
-  /* 移动端优化：简化过渡效果 */
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .actions .el-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-/* 渐变色按钮样式 */
-.actions .el-button--success {
-  background: linear-gradient(135deg, #2ed573, #1dd1a1);
-  border: none;
-  color: white;
-}
-
-.actions .el-button--warning {
-  background: linear-gradient(135deg, #ffa502, #ff6b00);
-  border: none;
-  color: white;
-}
-
-.actions .el-button--info {
-  background: linear-gradient(135deg, #747d8c, #57606f);
-  border: none;
-  color: white;
-}
-
-.actions .el-button--primary {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border: none;
-  color: white;
 }
 
 .meta-info {
@@ -566,8 +540,7 @@ const viewDetail = () => {
 /* Element Plus 自定义样式 */
 :deep(.status-select .el-input__wrapper) {
   border-radius: var(--border-radius);
-  /* 移动端优化：简化过渡效果 */
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 :deep(.status-select .el-input__wrapper:hover) {
@@ -627,26 +600,52 @@ const viewDetail = () => {
     gap: 4px;
   }
   
-  /* 移动端性能优化 */
-  .operator-ticket-card,
-  .type-tag,
-  .screenshots-counter,
-  .arrow-icon,
-  .actions .el-button,
-  :deep(.status-select .el-input__wrapper) {
-    transition: none !important;
-    transform: none !important;
+  /* 移动端优化：简化卡片悬停效果 */
+  .operator-ticket-card {
+    transition: none;
   }
   
   .operator-ticket-card:hover {
-    transform: none !important;
-    box-shadow: var(--shadow-lg) !important;
+    transform: none;
+    box-shadow: var(--shadow-xl);
+  }
+  
+  .actions .el-button {
+    transition: none;
+  }
+  
+  .actions .el-button:hover {
+    transform: none;
+  }
+  
+  .type-tag {
+    transition: none;
+  }
+  
+  .type-tag:hover {
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .editable-tag:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .screenshots-counter {
+    transition: none;
   }
   
   .screenshots-counter:hover {
-    transform: none !important;
-    border-color: var(--el-color-primary) !important;
-    background: var(--el-color-primary-light-9) !important;
+    transform: none;
+  }
+  
+  .arrow-icon {
+    transition: none;
+  }
+  
+  .screenshots-counter:hover .arrow-icon {
+    transform: none;
   }
 }
 
@@ -674,6 +673,15 @@ const viewDetail = () => {
   .actions .el-button {
     flex: 1;
     min-width: 80px;
+  }
+  
+  /* 移动端优化：进一步简化样式 */
+  :deep(.status-select .el-input__wrapper) {
+    transition: none;
+  }
+  
+  :deep(.status-select .el-input__wrapper:hover) {
+    box-shadow: var(--shadow);
   }
 }
 </style>

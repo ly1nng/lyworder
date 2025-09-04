@@ -29,16 +29,15 @@ export const formatFileSize = (bytes) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-// 格式化日期时间
+// 格式化日期时间 - 显示更友好的日期时间格式
 export const formatDateTime = (dateString) => {
     if (!dateString) return '-'
 
     const date = new Date(dateString)
     const now = new Date()
-    const diff = now.getTime() - date.getTime()
 
     // 如果是今天
-    if (diff < 24 * 60 * 60 * 1000 && date.getDate() === now.getDate()) {
+    if (date.toDateString() === now.toDateString()) {
         return date.toLocaleTimeString('zh-CN', {
             hour: '2-digit',
             minute: '2-digit'
@@ -65,10 +64,9 @@ export const formatDateTime = (dateString) => {
     })
 }
 
-// 格式化日期时间到秒
-export const formatDateTimeToSecond = (dateString) => {
+// 格式化日期（修改为显示更完整的日期时间）
+export const formatDate = (dateString) => {
     if (!dateString) return '-'
-
     const date = new Date(dateString)
     return date.toLocaleString('zh-CN', {
         year: 'numeric',
@@ -78,12 +76,6 @@ export const formatDateTimeToSecond = (dateString) => {
         minute: '2-digit',
         second: '2-digit'
     })
-}
-
-// 格式化日期（简化版）
-export const formatDate = (dateString) => {
-    if (!dateString) return '-'
-    return new Date(dateString).toLocaleDateString('zh-CN')
 }
 
 // 格式化相对时间

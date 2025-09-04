@@ -51,5 +51,9 @@ export default defineConfig({
         }
       }
     }
+  },
+  // 优化移动端性能
+  optimizeDeps: {
+    include: ['vue', 'vue-router', 'pinia', 'element-plus', '@element-plus/icons-vue']
   }
 })
