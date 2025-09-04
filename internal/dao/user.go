@@ -87,3 +87,14 @@ func UpdateUserRole(userName, role string) error {
 func DeleteUser(userName string) error {
 	return global.DBEngine.Where("user_name = ?", userName).Delete(&model.User{}).Error
 }
+
+// 更新用户信息
+func UpdateUser(userName string, user *model.User) error {
+	return global.DBEngine.Model(&model.User{}).
+		Where("user_name = ?", userName).
+		Updates(map[string]interface{}{
+			"role":     user.Role,
+			"ops_type": user.OpsType,
+			"status":   user.Status,
+		}).Error
+}

@@ -258,3 +258,63 @@ func DeleteUser(c *gin.Context) {
 		"message": "删除用户成功",
 	})
 }
+
+// UpdateUserInfo 更新用户信息
+// @Summary 更新用户信息
+// @Description 更新指定用户的信息，包括角色、运维类型和状态，需要管理员权限
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Param user_name query string true "用户名"
+// @Param user body model.User true "用户信息"
+// @Success 200 {object} model.Response{message=string} "更新成功"
+// @Failure 400 {object} model.Response{error=string} "请求参数错误"
+// @Failure 401 {object} model.Response{error=string} "未授权"
+// @Failure 500 {object} model.Response{error=string} "服务器错误"
+// @Router /api/v1/operator/users/info [put]
+func UpdateUserInfo(c *gin.Context) {
+	userName := c.Query("user_name")
+	if userName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "用户名不能为空",
+		})
+		return
+	}
+
+	var user model.User
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "请求体格式错误: " + err.Error(),
+		})
+		return
+	}
+
+	// 检查用户是否存在
+	existingUser, err := dao.GetUserByUserName(userName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "查询用户失败: " + err.Error(),
+		})
+		return
+	}
+
+	if existingUser == nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "用户不存在",
+		})
+		return
+	}
+
+	// 执行更新操作
+	err = dao.UpdateUser(userName, &user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "更新用户失败: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "更新用户成功",
+	})
+}

@@ -273,6 +273,65 @@ paths:
       summary: 新增用户
       tags:
       - 用户管理
+  /api/v1/operator/users/info:
+    put:
+      consumes:
+      - application/json
+      description: 更新指定用户的信息，包括角色、运维类型和状态，需要管理员权限
+      parameters:
+      - description: 用户名
+        in: query
+        name: user_name
+        required: true
+        type: string
+      - description: 用户信息
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                message:
+                  type: string
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+        "500":
+          description: 服务器错误
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.Response'
+            - properties:
+                error:
+                  type: string
+              type: object
+      summary: 更新用户信息
+      tags:
+      - 用户管理
   /api/v1/operator/users/status:
     get:
       description: 从users表获取指定状态的用户，需要管理员权限
