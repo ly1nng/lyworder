@@ -148,7 +148,7 @@
           </div>
           <div class="meta-item">
             <span class="meta-label">处理人:</span>
-            <span class="meta-value">{{ ticket.operator_name || '未分配' }}</span>
+            <span class="meta-value">{{ formatOperatorNames(ticket.operator_name) || '未分配' }}</span>
           </div>
         </div>
         <div class="meta-row">
@@ -276,6 +276,19 @@ const handleOperatorChange = () => {
 const viewDetail = () => {
   router.push(`/tickets/detail?id=${props.ticket.id}`)
 }
+
+// 格式化处理人名称显示
+const formatOperatorNames = (operatorNames) => {
+  if (!operatorNames) return ''
+  
+  // 如果是字符串且包含逗号，分割成数组
+  if (typeof operatorNames === 'string' && operatorNames.includes(',')) {
+    return operatorNames.split(',').map(name => name.trim()).join(', ')
+  }
+  
+  return operatorNames
+}
+
 </script>
 
 <style scoped>

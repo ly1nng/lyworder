@@ -312,6 +312,8 @@
               v-model="operatorForm.operator_name" 
               placeholder="请选择处理人"
               style="width: 100%"
+              multiple
+              filterable
             >
               <el-option 
                 v-for="operator in operators" 
@@ -497,7 +499,7 @@ const typeForm = ref({
 }) // 新增工单类型表单数据
 
 const operatorForm = ref({
-  operator_name: ''
+  operator_name: [] // 改为数组以支持多选
 }) // 处理人表单数据
 
 // 是否为移动端
@@ -547,6 +549,18 @@ const fetchOperators = async () => {
   } catch (error) {
     console.error('获取运维人员列表失败:', error)
   }
+}
+
+// 格式化处理人名称显示
+const formatOperatorNames = (operatorNames) => {
+  if (!operatorNames) return ''
+  
+  // 如果是字符串且包含逗号，分割成数组
+  if (typeof operatorNames === 'string' && operatorNames.includes(',')) {
+    return operatorNames.split(',').map(name => name.trim()).join(', ')
+  }
+  
+  return operatorNames
 }
 
 // 刷新数据
@@ -714,7 +728,8 @@ const handleOperatorChange = async (ticket) => {
     await fetchOperators()
     
     currentTicket.value = ticket
-    operatorForm.value.operator_name = ticket.operator_name || ''
+    // 将当前处理人字符串转换为数组
+    operatorForm.value.operator_name = ticket.operator_name ? ticket.operator_name.split(',').map(name => name.trim()) : []
     operatorDialogVisible.value = true
   } catch (error) {
     console.error('获取处理人列表失败:', error)
@@ -727,13 +742,18 @@ const saveOperator = async () => {
   try {
     saving.value = true
     
-    await ticketApi.updateTicketOperator(currentTicket.value.id, operatorForm.value.operator_name)
+    // 将数组转换为逗号分隔的字符串
+    const operatorNames = Array.isArray(operatorForm.value.operator_name) 
+      ? operatorForm.value.operator_name.join(',') 
+      : operatorForm.value.operator_name
+    
+    await ticketApi.updateTicketOperator(currentTicket.value.id, operatorNames)
     ElMessage.success('处理人分配成功')
     
     // 更新本地数据
     const ticket = tickets.value.find(t => t.id === currentTicket.value.id)
     if (ticket) {
-      ticket.operator_name = operatorForm.value.operator_name
+      ticket.operator_name = operatorNames
       ticket.updated_at = new Date().toISOString()
     }
     

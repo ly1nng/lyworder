@@ -153,7 +153,11 @@ const apiService = {
         updateTicketStatus: (ticketId, status) => api.put(`/tickets/${ticketId}/status`, { status }),
 
         // 更新工单处理人
-        updateTicketOperator: (ticketId, operatorName) => api.put(`/tickets/${ticketId}/operatorname`, { operator_name: operatorName }),
+        updateTicketOperator: (ticketId, operatorName) => {
+            // 如果operatorName是数组，转换为逗号分隔的字符串
+            const operatorNames = Array.isArray(operatorName) ? operatorName.join(',') : operatorName;
+            return api.put(`/tickets/${ticketId}/operatorname`, { operator_name: operatorNames })
+        },
 
         // 更新工单备注
         updateTicketRemark: (ticketId, remark) => api.put(`/tickets/${ticketId}/remark`, { remark }),
