@@ -30,6 +30,12 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
     (response) => {
+        // 对于201状态码的特殊处理（工单创建成功）
+        if (response.status === 201) {
+            // 直接返回响应数据，不进行code检查
+            return response.data;
+        }
+
         // 检查业务状态码
         if (response.data && response.data.code !== undefined) {
             if (response.data.code !== 200) {

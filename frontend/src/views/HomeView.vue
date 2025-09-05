@@ -330,7 +330,8 @@ const submitTicket = async () => {
       screenshots: previewImages.value.map(img => img.raw)
     })
     
-    if (response.code === 200) {
+    // 由于API拦截器已经处理了201状态码，这里只需要检查响应是否存在且包含数据
+    if (response && response.data && response.data.id) {
       newTicketId.value = response.data.id
       showSuccessDialog.value = true
       
@@ -345,7 +346,7 @@ const submitTicket = async () => {
         uploadRef.value.clearFiles()
       }
     } else {
-      throw new Error(response.message || '提交失败')
+      throw new Error(response?.msg || response?.message || '提交失败')
     }
   } catch (error) {
     console.error('提交工单失败:', error)
