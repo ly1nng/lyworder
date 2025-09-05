@@ -189,17 +189,27 @@ func CreateTicket(c *gin.Context) {
 			if err != nil {
 				log.Printf("SendTicketOperator failed, err: %v", err)
 			}
+		} else {
+			// 通知给admin角色的用户
+			users, err := dao.GetAllUsers()
+			if err != nil {
+				log.Printf("GetAllUsers failed, err: %v", err)
+			}
+			for _, user := range users {
+				if user.Role == "admin" {
+					robot.ToUserName = append(robot.ToUserName, user.UserName)
+				}
+				ticketdetail := fmt.Sprintf("%s%s?id=%s", global.ServerSetting.Host, "/tickets/detail", ticket.ID)
+				robot.Content = fmt.Sprintf("### %s\n%s\n工单详情：[%s](%s)\n请手动指派对应的处理人", ticket.Title, ticket.Content, ticketdetail, ticketdetail)
+				err = meet.Send(&robot)
+				if err != nil {
+					log.Printf("SendTicketOpen failed, err: %v", err)
+				}
+			}
+
 		}
 		dao.UpdateTicketOperatorName(ticket.ID, aiticket.OperatorName)
 	}()
-	// 构建包含开放状态的消息内容
-	robot.ToUserName = []string{ticket.UserName, "魏达祥"}
-	ticketdetail := fmt.Sprintf("%s%s?id=%s", global.ServerSetting.Host, "/tickets/detail", ticket.ID)
-	robot.Content = fmt.Sprintf("### %s\n%s\n工单详情：[%s](%s)\n工单状态：<font color=\"green\">开放中</font>", ticket.Title, ticket.Content, ticketdetail, ticketdetail)
-	err = meet.Send(&robot)
-	if err != nil {
-		log.Printf("SendTicketOpen failed, err: %v", err)
-	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"data": gin.H{
