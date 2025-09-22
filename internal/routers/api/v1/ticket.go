@@ -397,7 +397,7 @@ func GetTickets(c *gin.Context) {
 	}
 
 	if userName != "" {
-		if userName != currentUserName && currentRole != "admin" {
+		if operatorName != currentUserName && currentRole != "admin" {
 			c.JSON(http.StatusForbidden, gin.H{"error": "没有权限访问此工单"})
 			return
 		}
