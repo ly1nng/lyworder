@@ -32,7 +32,7 @@ func UpdateTicketOperatorName(ticketID string, operatorName string) error {
 }
 
 // 修改GetTickets方法，确保返回operator_name字段并支持查询所有
-func GetTickets(title, status, startDate, endDate, userName string, operatorName string, page, limit int) ([]model.Ticket, int64, error) {
+func GetTickets(title, status, ticketType, startDate, endDate, userName string, operatorName string, page, limit int) ([]model.Ticket, int64, error) {
 	db := global.DBEngine.Model(&model.Ticket{}).Select("*")
 	if userName != "" {
 		db = db.Where("user_name LIKE ?", userName+"%")
@@ -50,6 +50,10 @@ func GetTickets(title, status, startDate, endDate, userName string, operatorName
 
 	if status != "" {
 		db = db.Where("status = ?", status)
+	}
+
+	if ticketType != "" {
+		db = db.Where("ticket_type = ?", ticketType)
 	}
 
 	if startDate != "" && endDate != "" {

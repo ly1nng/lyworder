@@ -318,6 +318,7 @@ func GetTicketDetail(c *gin.Context) {
 // @Produce json
 // @Param title query string false "工单标题模糊搜索"
 // @Param status query string false "工单状态(open/closed)"
+// @Param ticket_type query string false "工单类型(IT/系统)"
 // @Param start_date query string false "开始日期(YYYY-MM-DD)"
 // @Param end_date query string false "结束日期(YYYY-MM-DD)"
 // @Param user_name query string false "创建人用户名"
@@ -370,6 +371,7 @@ func GetTickets(c *gin.Context) {
 
 	title := c.Query("title")
 	status := c.Query("status")
+	ticketType := c.Query("ticket_type")
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
 	userName := c.Query("user_name")
@@ -381,7 +383,7 @@ func GetTickets(c *gin.Context) {
 	pageInt, _ := strconv.Atoi(page)
 	limitInt, _ := strconv.Atoi(limit)
 
-	tickets, total, err := dao.GetTickets(title, status, startDate, endDate, userName, operatorName, pageInt, limitInt)
+	tickets, total, err := dao.GetTickets(title, status, ticketType, startDate, endDate, userName, operatorName, pageInt, limitInt)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
