@@ -29,6 +29,19 @@
           </el-select>
         </el-form-item>
         
+        <el-form-item label="工单类型" class="search-item">
+          <el-select
+            v-model="searchParams.ticket_type"
+            placeholder="请选择类型"
+            clearable
+            style="width: 100%"
+          >
+            <el-option label="全部类型" value="" />
+            <el-option label="IT" value="IT" />
+            <el-option label="系统" value="系统" />
+          </el-select>
+        </el-form-item>
+        
         <el-form-item 
           v-if="showCreator" 
           label="创建人" 
@@ -120,6 +133,7 @@ const emit = defineEmits(['search', 'reset'])
 const searchParams = ref({
   title: '',
   status: '',
+  ticket_type: '',
   user_name: '',
   operator_name: '',
   ...props.defaultValues
@@ -152,6 +166,7 @@ const handleReset = () => {
   searchParams.value = {
     title: '',
     status: '',
+    ticket_type: '',
     user_name: '',
     operator_name: '',
     start_date: '',
