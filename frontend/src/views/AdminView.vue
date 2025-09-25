@@ -473,6 +473,8 @@ const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const searchParams = ref({})
+const globalOpenCount = ref(0)  // 全局进行中的工单数
+const globalClosedCount = ref(0)  // 全局已关闭的工单数
 
 // 对话框状态
 const remarkDialogVisible = ref(false)
@@ -507,13 +509,11 @@ const isMobile = computed(() => appStore.isMobile)
 
 // 统计数据
 const stats = computed(() => {
-  const openCount = tickets.value.filter(t => t.status === 'open').length
-  const closedCount = tickets.value.filter(t => t.status === 'closed').length
-  
+  // 修改为使用全局统计数据而不是当前页面数据
   return {
     total: total.value,
-    open: openCount,
-    closed: closedCount,
+    open: globalOpenCount.value,
+    closed: globalClosedCount.value,
     operators: operators.value.length
   }
 })
@@ -533,11 +533,35 @@ const fetchTickets = async () => {
     tickets.value = response.tickets || []
     total.value = response.total || 0
     
+    // 获取全局统计数据
+    await fetchGlobalStats()
+    
   } catch (error) {
     console.error('获取工单列表失败:', error)
     ElMessage.error('获取工单列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+// 获取全局统计数据
+const fetchGlobalStats = async () => {
+  try {
+    // 获取进行中的工单数
+    const openResponse = await ticketApi.getTickets({
+      status: 'open'
+    })
+    globalOpenCount.value = openResponse.total || 0
+    
+    // 获取已关闭的工单数
+    const closedResponse = await ticketApi.getTickets({
+      status: 'closed'
+    })
+    globalClosedCount.value = closedResponse.total || 0
+    
+  } catch (error) {
+    console.error('获取全局统计数据失败:', error)
+    ElMessage.error('获取全局统计数据失败')
   }
 }
 
@@ -626,6 +650,9 @@ const handleStatusChange = async (ticketId, newStatus) => {
       ticket.status = newStatus
       ticket.updated_at = new Date().toISOString()
     }
+    
+    // 更新全局统计数据
+    await fetchGlobalStats()
     
   } catch (error) {
     console.error('更新状态失败:', error)
@@ -826,11 +853,12 @@ const showGridFromViewer = () => {
 }
 
 // 页面初始化
-onMounted(() => {
-  Promise.all([
+onMounted(async () => {
+  await Promise.all([
     fetchTickets(),
     fetchOperators()
   ])
+  await fetchGlobalStats()
 })
 </script>
 
