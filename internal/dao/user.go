@@ -93,8 +93,9 @@ func UpdateUser(userName string, user *model.User) error {
 	return global.DBEngine.Model(&model.User{}).
 		Where("user_name = ?", userName).
 		Updates(map[string]interface{}{
-			"role":     user.Role,
-			"ops_type": user.OpsType,
-			"status":   user.Status,
+			"user_name": user.UserName,
+			"role":      user.Role,
+			"ops_type":  user.OpsType,
+			"status":    user.Status,
 		}).Error
 }
