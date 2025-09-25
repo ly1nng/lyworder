@@ -365,7 +365,27 @@ const handleReset = () => {
 const handlePageChange = ({ page, limit }) => {
   currentPage.value = page
   pageSize.value = limit
-  fetchTickets()
+  fetchTickets().then(() => {
+    // 分页切换后自动滚动到筛选栏
+    scrollToSearchForm()
+  })
+}
+
+// 滚动到筛选栏
+const scrollToSearchForm = () => {
+  // 查找搜索表单元素
+  const searchForm = document.querySelector('.search-form')
+  if (searchForm) {
+    // 获取搜索表单的位置
+    const rect = searchForm.getBoundingClientRect()
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+    // 滚动到搜索表单位置
+    const offsetTop = rect.top + scrollTop
+    window.scrollTo({ top: offsetTop, behavior: 'smooth' })
+  } else {
+    // 如果找不到搜索表单，滚动到页面顶部
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 }
 
 // 查看备注
